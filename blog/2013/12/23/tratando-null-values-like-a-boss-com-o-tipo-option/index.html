@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Breno Ferreira's Blog</title>
+  <title>Tratando null values like a boss com o tipo Option - Breno Ferreira's Blog</title>
   <meta name="author" content="Breno Ferreira">
 
   
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://brenoferreira.github.io">
+  <link rel="canonical" href="http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Breno Ferreira's Blog" type="application/atom+xml">
@@ -63,15 +63,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/">Tratando Null Values Like a Boss Com O Tipo Option</a></h1>
+      <h1 class="entry-title">Tratando Null Values Like a Boss Com O Tipo Option</h1>
     
     
       <p class="meta">
@@ -94,7 +91,7 @@
   </header>
 
 
-  <div class="entry-content"><p>Um dos pesadelos de todo desenvolvedor, é uma <code>NullPointerException</code>. Tratar objetos que podem conter um valor, ou não, é chato, e muito propenso à erros. Quem nunca esqueceu de fazer um check contra valores nulos?</p>
+<div class="entry-content"><p>Um dos pesadelos de todo desenvolvedor, é uma <code>NullPointerException</code>. Tratar objetos que podem conter um valor, ou não, é chato, e muito propenso à erros. Quem nunca esqueceu de fazer um check contra valores nulos?</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">if</span><span class="o">(</span><span class="n">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span> <span class="k">throw</span> <span class="k">new</span> <span class="nc">InvalidArgumentException</span><span class="o">()</span> <span class="o">}</span>
@@ -268,22 +265,16 @@
 
 <p>Breno</p>
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/11/20/meu-primeiro-post-um-meta-post/">Meu Primeiro Post - Um Meta-post</a></h1>
-    
-    
-      <p class="meta">
-        
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Breno Ferreira</span></span>
+
+      
 
 
 
@@ -295,47 +286,38 @@
   
 
 
-<time datetime="2013-11-20T16:41:00-02:00" pubdate data-updated="true">Nov 20<span>th</span>, 2013</time>
-        
-      </p>
+<time datetime="2013-12-23T20:06:00-02:00" pubdate data-updated="true">Dec 23<span>rd</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/functional-programming/'>Functional Programming</a>, <a class='category' href='/blog/categories/monads/'>Monads</a>, <a class='category' href='/blog/categories/option/'>Option</a>, <a class='category' href='/blog/categories/scala/'>Scala</a>
+  
+</span>
+
+
+    </p>
     
-  </header>
-
-
-  <div class="entry-content"><p>Olá</p>
-
-<p>Esse já deve ser meu terceiro ou quarto primeiro post em um blog que inicio, depois de tentativas fracassadas em escrever sobre algum assunto, que na época julgava interessante. E, já passei um tempo matutando sobre o que escrever no primeiro post dessa nova empreitada. É bem difícil decidir o assunto do primeiro post, como escrevê-lo e qual mensagem passar. Então, vai lá minha nova tentativa.</p>
-
-<p>Demorei muito para finalmente conseguir passar do primeiro parágrafo deste blog. Entre dúvidas de assuntos e uma certa resistência em digitar as primeiras palavras, acabava desistindo. Até que um dia, me deparei com um livro que me fez acordar para alguns problemas que estava enfrentando.</p>
-
-<p><a href="http://www.amazon.com/The-War-Art-Through-Creative/dp/1936891026"><img src="/images/posts/thewarofart.jpg" alt="The War of Art" /></a></p>
-
-<p>Neste livro, o autor fala sobre alguns assuntos, e um dos principais temas é sobre Resistência, e como ela acaba nos bloqueando de fazer o que a gente quer ou precisa fazer. Abaixo segue dois trechos traduzidos do livro:</p>
-
-<p><em>Resistência infalivelmente vai apontar para o Norte &ndash; isso significa aquela ação ou tarefa que ela quer evitar que façamos. Podemos usar isso. Podemos usá-la como uma bússola. Nós podemos navegar por Resistência, deixando-a nos guiar para aquela ação ou tarefa que devemos seguir antes de todas as outras.</em></p>
-
-<p><em>Regra de ouro: Quanto mais importante uma tarefa ou ação for para a evolução da nossa alma, mais Resistência iremos sentir em perseguí-la.</em></p>
-
-<p>Então, como voces viram pelo primeiro parágrafo deste post, eu me identifiquei bastante por essa idéia. É algo que eu já senti algumas vezes na vida quando queria começar a fazer algo diferente.</p>
-
-<p>E este post é o resultado de uma tentativa de mudança de hábito após começar a ler esse livro. Aqui voce provavelmente vai encontrar coisas sobre diversos assuntos, desde tecnologia, alguns ocasionais reviews de livros que li, opiniões minhas sobre algum assunto, entre outras coisas. Espero ter sucesso! Desejem-me sorte.</p>
-
-<p>Abraços</p>
-
-<p>Breno</p>
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/" data-via="" data-counturl="http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/" >Tweet</a>
+  
+  
+  
 </div>
-  
-  
 
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/11/20/meu-primeiro-post-um-meta-post/" title="Previous Post: Meu primeiro post - um meta-post">&laquo; Meu primeiro post - um meta-post</a>
+      
+      
+    </p>
+  </footer>
+</article>
 
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
 </div>
+
 <aside class="sidebar">
   
     <section>
@@ -359,6 +341,7 @@
 
   
 </aside>
+
 
     </div>
   </div>

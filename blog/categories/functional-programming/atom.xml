@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Functional Programming | Breno Ferreira's Blog]]></title>
+  <link href="http://brenoferreira.github.io/blog/categories/functional-programming/atom.xml" rel="self"/>
+  <link href="http://brenoferreira.github.io/"/>
+  <updated>2013-12-23T20:20:46-02:00</updated>
+  <id>http://brenoferreira.github.io/</id>
+  <author>
+    <name><![CDATA[Breno Ferreira]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Tratando null values like a boss com o tipo Option]]></title>
+    <link href="http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/"/>
+    <updated>2013-12-23T20:06:00-02:00</updated>
+    <id>http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option</id>
+    <content type="html"><![CDATA[<p>Um dos pesadelos de todo desenvolvedor, é uma <code>NullPointerException</code>. Tratar objetos que podem conter um valor, ou não, é chato, e muito propenso à erros. Quem nunca esqueceu de fazer um check contra valores nulos?</p>
+
+<p><code>scala
+if(value == null) { throw new InvalidArgumentException() }
+</code></p>
+
+<p>ou ainda</p>
+
+<p><code>scala
+var pessoa = pessoas.find(x =&gt; x.Nome == "Breno")
+pessoa.AumentarSalario(100) // NullReferenceException
+</code></p>
+
+<p>Desde que comecei a me aventurar pelo mundo de linguagens funcionais, percebi que lá, eu não me preocupava com isso. E isso se devia ao fato de que eu usava um tipo de dados bem interessante: o tipo <code>Option</code>.</p>
+
+<p><code>scala
+trait Option[+T] {
+  def value:T
+  def hasValue:Boolean
+}
+</code></p>
+
+<p>Como voce pode ver, o tipo Option simplesmente encapsula um valor possivelmente nulo. E existem os tipos concretos, chamados <code>Some</code> e <code>None</code>. Abaixo a declaração de ambos.</p>
+
+<p>``` scala
+case class Some<a href="val%20value:T">T</a> extends Option[T] {
+  def hasValue = true
+}</p>
+
+<p>case object None extends Option[Nothing] {
+  def value = throw new Exception(&ldquo;No value&rdquo;)
+  def hasValue = false
+}
+```</p>
+
+<p>E também temos um objeto Option com o método apply que cria um valor do tipo Option com base no valor passado como parâmetro:</p>
+
+<p><code>scala
+object Option {
+  def apply[A](x: A): Option[A] = if (x == null) None else Some(x)
+}
+</code></p>
+
+<p>Assim, podemos criar valores do tipo <code>Option</code> da seguinte maneira:</p>
+
+<p><code>scala
+val ten = Some(10)
+println(ten.value) //10
+</code></p>
+
+<p><code>scala
+val none = None
+println(ten.value) //throws Exception
+</code></p>
+
+<p>Como voces podem ver, o encapsulamento do valor é feito, mas ainda sim, podemos cair em uma Exception no caso de tentarmos acessar o <code>value</code> do Option. Quer dizer então que o Option não serve para nada? Não é bem assim.</p>
+
+<p>O poder verdadeiro do Option está em suas higher-order functions <code>map</code> e <code>flatMap</code>. Na definição da trait <code>Option</code>, temos a declaração dos métodos:</p>
+
+<p>``` scala
+def flatMap<a href="f:%20T%20=>%20Option[B]">B</a>:Option[B] =
+  if(hasValue) f(value) else None</p>
+
+<p>def map<a href="f:%20T%20=>%20B">B</a>:Option[B] =
+  flatMap(_ => Option(f(value)))
+```</p>
+
+<p>Qual a útilidade desses métodos? Simples:</p>
+
+<ul>
+<li>Ter acesso ao valor armazenado no <code>Option</code>, se houver um</li>
+<li>Fazer combinações de valores do tipo <code>Option</code></li>
+</ul>
+
+
+<p>Como assim?</p>
+
+<p>``` scala
+val ten = Some(10)
+val timesTwo = ten.flatMap(x => Some(x*2))</p>
+
+<p>timesTwo.map(x => println(x)) //20
+```</p>
+
+<p>Como vimos, com os métodos <code>flatMap</code> e <code>map</code> podemos acessar o valor contido dentro do <code>Option</code>, também é possível transformar o valor em um outro valor do tipo <code>Option</code>. No exemplo acima, criamos um <code>Some(10)</code> e depois o transformamos, multiplicando o valor por 2. Assim, obtemos um <code>Some(20)</code>. Logo em seguida, usamos o método <code>map</code> para chamarmos o método <code>println</code> que imprime o valor na tela. E o legal é que, caso em alguma chamada a <code>map</code> ou <code>flatMap</code>, apareça um valor <code>null</code>, o resultado vai ser um <code>None</code>. E qualquer chamada a uma dessas funções sobre um valor <code>None</code>, nada irá acontecer, e assim, nenhuma <code>NullReferenceException</code> será lançada. Legal não é?</p>
+
+<p>Também é possível obter o valor contido dentro do <code>Option</code> através de Pattern Matching:</p>
+
+<p><code>scala
+val none = None
+none.map(_ =&gt; 10) match {
+  case Some(x) =&gt; println(x)
+  case None =&gt; println("Vazio")
+}
+//Vazio
+</code></p>
+
+<p>No exemplo acima, como o valor é um <code>None</code>, o map não faz nada, simplesmente retorna um <code>None</code>, e quando foi feito um Pattern Matching sobre o valor resultante, ele caiu no segundo caso, que imprimiu &ldquo;Vazio&rdquo; na tela.</p>
+
+<p>Um exemplo mais &ldquo;mundo real&rdquo; seria:</p>
+
+<p><code>scala
+val joao = pessoas.find(p =&gt; p.Nome == "João")//Retorna um Option[Pessoa]
+val salarioDoJoao = joao.map(p =&gt; p.Salario) //Retorna um Option[Double]
+println(salarioDoJoao.getOrElse(0.0))
+</code></p>
+
+<p>No exemplo acima, temos uma lista de pessoas <code>pessoas</code>, e chamamos o método <code>find</code> para tentarmos achar dentro dessa lista, uma pessoa chamada &ldquo;João&rdquo;. Como o João pode não existir dentro da lista, ele retorna um <code>Option[Pessoa]</code>. Daí, pegamos o salário do possível valor do <code>joao</code> com a funcão <code>map</code>. No final, imprimimos o valor do salário. Mas, como o resultado final pode ser um <code>None</code>, chamamos mais uma função interessante chamada <code>getOrElse</code>. O que essa função faz é simples.</p>
+
+<p>``` scala
+def getOrElse<a href="default:B">B >: T</a> =
+  this match {</p>
+
+<pre><code>case Some(x) =&gt; x
+case None =&gt; default
+</code></pre>
+
+<p>  }
+```</p>
+
+<p>Como podemos ver, ela faz um Pattern Matching sobre o próprio valor, e caso ele seja um <code>Some[T]</code>, retornamos o próprio valor, caso seja um <code>None</code>, retornamos o valor default passado como parâmetro.</p>
+
+<p>Então, no exemplo do João acima, caso o João exista na lista, o seu salário será impresso na tela, caso não, será impresso o valor 0.0.</p>
+
+<p>O que você achou?</p>
+
+<p>Abraços</p>
+
+<p>Breno</p>
+]]></content>
+  </entry>
+  
+</feed>

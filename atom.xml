@@ -4,7 +4,7 @@
   <title><![CDATA[Breno Ferreira's Blog]]></title>
   <link href="http://brenoferreira.github.io/atom.xml" rel="self"/>
   <link href="http://brenoferreira.github.io/"/>
-  <updated>2013-11-20T17:18:31-02:00</updated>
+  <updated>2013-12-23T20:20:46-02:00</updated>
   <id>http://brenoferreira.github.io/</id>
   <author>
     <name><![CDATA[Breno Ferreira]]></name>
@@ -12,6 +12,187 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tratando null values like a boss com o tipo Option]]></title>
+    <link href="http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/"/>
+    <updated>2013-12-23T20:06:00-02:00</updated>
+    <id>http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option</id>
+    <content type="html"><![CDATA[<p>Um dos pesadelos de todo desenvolvedor, é uma <code>NullPointerException</code>. Tratar objetos que podem conter um valor, ou não, é chato, e muito propenso à erros. Quem nunca esqueceu de fazer um check contra valores nulos?</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">if</span><span class="o">(</span><span class="n">value</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span> <span class="k">throw</span> <span class="k">new</span> <span class="nc">InvalidArgumentException</span><span class="o">()</span> <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ou ainda</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">var</span> <span class="n">pessoa</span> <span class="k">=</span> <span class="n">pessoas</span><span class="o">.</span><span class="n">find</span><span class="o">(</span><span class="n">x</span> <span class="k">=&gt;</span> <span class="n">x</span><span class="o">.</span><span class="nc">Nome</span> <span class="o">==</span> <span class="s">&quot;Breno&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="n">pessoa</span><span class="o">.</span><span class="nc">AumentarSalario</span><span class="o">(</span><span class="mi">100</span><span class="o">)</span> <span class="c1">// NullReferenceException</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Desde que comecei a me aventurar pelo mundo de linguagens funcionais, percebi que lá, eu não me preocupava com isso. E isso se devia ao fato de que eu usava um tipo de dados bem interessante: o tipo <code>Option</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">trait</span> <span class="nc">Option</span><span class="o">[</span><span class="kt">+T</span><span class="o">]</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">value</span><span class="k">:</span><span class="kt">T</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">hasValue</span><span class="k">:</span><span class="kt">Boolean</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Como voce pode ver, o tipo Option simplesmente encapsula um valor possivelmente nulo. E existem os tipos concretos, chamados <code>Some</code> e <code>None</code>. Abaixo a declaração de ambos.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">case</span> <span class="k">class</span> <span class="nc">Some</span><span class="o">[</span><span class="kt">T</span><span class="o">](</span><span class="k">val</span> <span class="n">value</span><span class="k">:</span><span class="kt">T</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">Option</span><span class="o">[</span><span class="kt">T</span><span class="o">]</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">hasValue</span> <span class="k">=</span> <span class="kc">true</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">case</span> <span class="k">object</span> <span class="nc">None</span> <span class="k">extends</span> <span class="nc">Option</span><span class="o">[</span><span class="kt">Nothing</span><span class="o">]</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">value</span> <span class="k">=</span> <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="o">(</span><span class="s">&quot;No value&quot;</span><span class="o">)</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">hasValue</span> <span class="k">=</span> <span class="kc">false</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>E também temos um objeto Option com o método apply que cria um valor do tipo Option com base no valor passado como parâmetro:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">object</span> <span class="nc">Option</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">apply</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">x</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="k">if</span> <span class="o">(</span><span class="n">x</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="nc">None</span> <span class="k">else</span> <span class="nc">Some</span><span class="o">(</span><span class="n">x</span><span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Assim, podemos criar valores do tipo <code>Option</code> da seguinte maneira:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">val</span> <span class="n">ten</span> <span class="k">=</span> <span class="nc">Some</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+</span><span class='line'><span class="n">println</span><span class="o">(</span><span class="n">ten</span><span class="o">.</span><span class="n">value</span><span class="o">)</span> <span class="c1">//10</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">val</span> <span class="n">none</span> <span class="k">=</span> <span class="nc">None</span>
+</span><span class='line'><span class="n">println</span><span class="o">(</span><span class="n">ten</span><span class="o">.</span><span class="n">value</span><span class="o">)</span> <span class="c1">//throws Exception</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Como voces podem ver, o encapsulamento do valor é feito, mas ainda sim, podemos cair em uma Exception no caso de tentarmos acessar o <code>value</code> do Option. Quer dizer então que o Option não serve para nada? Não é bem assim.</p>
+
+<p>O poder verdadeiro do Option está em suas higher-order functions <code>map</code> e <code>flatMap</code>. Na definição da trait <code>Option</code>, temos a declaração dos métodos:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">def</span> <span class="n">flatMap</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=&gt;</span> <span class="nc">Option</span><span class="o">[</span><span class="kt">B</span><span class="o">])</span><span class="k">:</span><span class="kt">Option</span><span class="o">[</span><span class="kt">B</span><span class="o">]</span> <span class="k">=</span>
+</span><span class='line'>  <span class="k">if</span><span class="o">(</span><span class="n">hasValue</span><span class="o">)</span> <span class="n">f</span><span class="o">(</span><span class="n">value</span><span class="o">)</span> <span class="k">else</span> <span class="nc">None</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="n">map</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)</span><span class="k">:</span><span class="kt">Option</span><span class="o">[</span><span class="kt">B</span><span class="o">]</span> <span class="k">=</span>
+</span><span class='line'>  <span class="n">flatMap</span><span class="o">(</span><span class="k">_</span> <span class="k">=&gt;</span> <span class="nc">Option</span><span class="o">(</span><span class="n">f</span><span class="o">(</span><span class="n">value</span><span class="o">)))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Qual a útilidade desses métodos? Simples:</p>
+
+<ul>
+<li>Ter acesso ao valor armazenado no <code>Option</code>, se houver um</li>
+<li>Fazer combinações de valores do tipo <code>Option</code></li>
+</ul>
+
+
+<p>Como assim?</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">val</span> <span class="n">ten</span> <span class="k">=</span> <span class="nc">Some</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+</span><span class='line'><span class="k">val</span> <span class="n">timesTwo</span> <span class="k">=</span> <span class="n">ten</span><span class="o">.</span><span class="n">flatMap</span><span class="o">(</span><span class="n">x</span> <span class="k">=&gt;</span> <span class="nc">Some</span><span class="o">(</span><span class="n">x</span><span class="o">*</span><span class="mi">2</span><span class="o">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">timesTwo</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">x</span> <span class="k">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="c1">//20</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Como vimos, com os métodos <code>flatMap</code> e <code>map</code> podemos acessar o valor contido dentro do <code>Option</code>, também é possível transformar o valor em um outro valor do tipo <code>Option</code>. No exemplo acima, criamos um <code>Some(10)</code> e depois o transformamos, multiplicando o valor por 2. Assim, obtemos um <code>Some(20)</code>. Logo em seguida, usamos o método <code>map</code> para chamarmos o método <code>println</code> que imprime o valor na tela. E o legal é que, caso em alguma chamada a <code>map</code> ou <code>flatMap</code>, apareça um valor <code>null</code>, o resultado vai ser um <code>None</code>. E qualquer chamada a uma dessas funções sobre um valor <code>None</code>, nada irá acontecer, e assim, nenhuma <code>NullReferenceException</code> será lançada. Legal não é?</p>
+
+<p>Também é possível obter o valor contido dentro do <code>Option</code> através de Pattern Matching:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">val</span> <span class="n">none</span> <span class="k">=</span> <span class="nc">None</span>
+</span><span class='line'><span class="n">none</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span> <span class="k">=&gt;</span> <span class="mi">10</span><span class="o">)</span> <span class="k">match</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="n">x</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">x</span><span class="o">)</span>
+</span><span class='line'>  <span class="k">case</span> <span class="nc">None</span> <span class="k">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="s">&quot;Vazio&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="c1">//Vazio</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>No exemplo acima, como o valor é um <code>None</code>, o map não faz nada, simplesmente retorna um <code>None</code>, e quando foi feito um Pattern Matching sobre o valor resultante, ele caiu no segundo caso, que imprimiu &ldquo;Vazio&rdquo; na tela.</p>
+
+<p>Um exemplo mais &ldquo;mundo real&rdquo; seria:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">val</span> <span class="n">joao</span> <span class="k">=</span> <span class="n">pessoas</span><span class="o">.</span><span class="n">find</span><span class="o">(</span><span class="n">p</span> <span class="k">=&gt;</span> <span class="n">p</span><span class="o">.</span><span class="nc">Nome</span> <span class="o">==</span> <span class="s">&quot;João&quot;</span><span class="o">)</span><span class="c1">//Retorna um Option[Pessoa]</span>
+</span><span class='line'><span class="k">val</span> <span class="n">salarioDoJoao</span> <span class="k">=</span> <span class="n">joao</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">p</span> <span class="k">=&gt;</span> <span class="n">p</span><span class="o">.</span><span class="nc">Salario</span><span class="o">)</span> <span class="c1">//Retorna um Option[Double]</span>
+</span><span class='line'><span class="n">println</span><span class="o">(</span><span class="n">salarioDoJoao</span><span class="o">.</span><span class="n">getOrElse</span><span class="o">(</span><span class="mf">0.0</span><span class="o">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>No exemplo acima, temos uma lista de pessoas <code>pessoas</code>, e chamamos o método <code>find</code> para tentarmos achar dentro dessa lista, uma pessoa chamada &ldquo;João&rdquo;. Como o João pode não existir dentro da lista, ele retorna um <code>Option[Pessoa]</code>. Daí, pegamos o salário do possível valor do <code>joao</code> com a funcão <code>map</code>. No final, imprimimos o valor do salário. Mas, como o resultado final pode ser um <code>None</code>, chamamos mais uma função interessante chamada <code>getOrElse</code>. O que essa função faz é simples.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">def</span> <span class="n">getOrElse</span><span class="o">[</span><span class="kt">B</span> <span class="k">&gt;:</span> <span class="kt">T</span><span class="o">](</span><span class="n">default</span><span class="k">:</span><span class="kt">B</span><span class="o">)</span> <span class="k">=</span>
+</span><span class='line'>  <span class="k">this</span> <span class="k">match</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="n">x</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">x</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nc">None</span> <span class="k">=&gt;</span> <span class="n">default</span>
+</span><span class='line'>  <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Como podemos ver, ela faz um Pattern Matching sobre o próprio valor, e caso ele seja um <code>Some[T]</code>, retornamos o próprio valor, caso seja um <code>None</code>, retornamos o valor default passado como parâmetro.</p>
+
+<p>Então, no exemplo do João acima, caso o João exista na lista, o seu salário será impresso na tela, caso não, será impresso o valor 0.0.</p>
+
+<p>O que você achou?</p>
+
+<p>Abraços</p>
+
+<p>Breno</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Meu primeiro post - um meta-post]]></title>
