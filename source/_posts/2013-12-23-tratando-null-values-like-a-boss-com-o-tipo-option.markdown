@@ -19,6 +19,8 @@ var pessoa = pessoas.find(x => x.Nome == "Breno")
 pessoa.AumentarSalario(100) // NullReferenceException
 ```
 
+Seria bom se houvesse alguma maneira de evitar esse tipo de problema de Exceptions serem lançadas por que o desenvolvedor esqueceu de tratar um valor que possivelmente veio nulo.
+
 Desde que comecei a me aventurar pelo mundo de linguagens funcionais, percebi que lá, eu não me preocupava com isso. E isso se devia ao fato de que eu usava um tipo de dados bem interessante: o tipo `Option`.
 
 ``` scala
@@ -75,7 +77,7 @@ def map[B](f: T => B):Option[B] =
 
 Qual a útilidade desses métodos? Simples:
 
-* Ter acesso ao valor armazenado no `Option`, se houver um
+* Ter acesso ao valor armazenado no `Option`, se houver um;
 * Fazer combinações de valores do tipo `Option`
 
 Como assim?
@@ -92,15 +94,24 @@ Como vimos, com os métodos `flatMap` e `map` podemos acessar o valor contido de
 Também é possível obter o valor contido dentro do `Option` através de Pattern Matching:
 
 ``` scala
+val ten = Some(10)
+ten match {
+  case Some(x) => println(x)
+  case None => println("Vazio")
+}
+//10
+```
+
+``` scala
 val none = None
-none.map(_ => 10) match {
+none match {
   case Some(x) => println(x)
   case None => println("Vazio")
 }
 //Vazio
 ```
 
-No exemplo acima, como o valor é um `None`, o map não faz nada, simplesmente retorna um `None`, e quando foi feito um Pattern Matching sobre o valor resultante, ele caiu no segundo caso, que imprimiu "Vazio" na tela.
+Nos exemplos acima, em um caso, o valor é um `Some(10)`, então ele cai no primeiro caso, e imprime o valor 10. No segundo caso, como é um `None`, ele cai no segundo caso, e imprime "Vazio".
 
 Um exemplo mais "mundo real" seria:
 
@@ -124,8 +135,4 @@ Como podemos ver, ela faz um Pattern Matching sobre o próprio valor, e caso ele
 
 Então, no exemplo do João acima, caso o João exista na lista, o seu salário será impresso na tela, caso não, será impresso o valor 0.0.
 
-O que você achou?
-
-Abraços
-
-Breno
+O legal do `Option` é que através da definição do seu tipo, e de suas higher-order functions, torna-se difícil uma `NullReferenceException` ser lançada. Toda vez que alguma função possa retornar um valor nulo, basta retornar um valor do tipo `Option[T]`, ao invés de simplesmente um valor do tipo `T`. A partir daí, é só usar as funções `map` e `flatMap`, que elas se encarregam de tratar os casos onde o valor for nulo, propagando o `None` por toda a cadeia de chamadas.
