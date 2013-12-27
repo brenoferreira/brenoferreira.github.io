@@ -122,6 +122,8 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
+<p>Seria bom se houvesse alguma maneira de evitar esse tipo de problema de Exceptions serem lançadas por que o desenvolvedor esqueceu de tratar um valor que possivelmente veio nulo.</p>
+
 <p>Desde que comecei a me aventurar pelo mundo de linguagens funcionais, percebi que lá, eu não me preocupava com isso. E isso se devia ao fato de que eu usava um tipo de dados bem interessante: o tipo <code>Option</code>.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -205,7 +207,7 @@
 <p>Qual a útilidade desses métodos? Simples:</p>
 
 <ul>
-<li>Ter acesso ao valor armazenado no <code>Option</code>, se houver um</li>
+<li>Ter acesso ao valor armazenado no <code>Option</code>, se houver um;</li>
 <li>Fazer combinações de valores do tipo <code>Option</code></li>
 </ul>
 
@@ -233,8 +235,25 @@
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">val</span> <span class="n">ten</span> <span class="k">=</span> <span class="nc">Some</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+</span><span class='line'><span class="n">ten</span> <span class="k">match</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="n">x</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">x</span><span class="o">)</span>
+</span><span class='line'>  <span class="k">case</span> <span class="nc">None</span> <span class="k">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="s">&quot;Vazio&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="c1">//10</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
 </pre></td><td class='code'><pre><code class='scala'><span class='line'><span class="k">val</span> <span class="n">none</span> <span class="k">=</span> <span class="nc">None</span>
-</span><span class='line'><span class="n">none</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span> <span class="k">=&gt;</span> <span class="mi">10</span><span class="o">)</span> <span class="k">match</span> <span class="o">{</span>
+</span><span class='line'><span class="n">none</span> <span class="k">match</span> <span class="o">{</span>
 </span><span class='line'>  <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="n">x</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="n">x</span><span class="o">)</span>
 </span><span class='line'>  <span class="k">case</span> <span class="nc">None</span> <span class="k">=&gt;</span> <span class="n">println</span><span class="o">(</span><span class="s">&quot;Vazio&quot;</span><span class="o">)</span>
 </span><span class='line'><span class="o">}</span>
@@ -242,7 +261,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>No exemplo acima, como o valor é um <code>None</code>, o map não faz nada, simplesmente retorna um <code>None</code>, e quando foi feito um Pattern Matching sobre o valor resultante, ele caiu no segundo caso, que imprimiu &ldquo;Vazio&rdquo; na tela.</p>
+<p>Nos exemplos acima, em um caso, o valor é um <code>Some(10)</code>, então ele cai no primeiro caso, e imprime o valor 10. No segundo caso, como é um <code>None</code>, ele cai no segundo caso, e imprime &ldquo;Vazio&rdquo;.</p>
 
 <p>Um exemplo mais &ldquo;mundo real&rdquo; seria:</p>
 
@@ -274,11 +293,7 @@
 
 <p>Então, no exemplo do João acima, caso o João exista na lista, o seu salário será impresso na tela, caso não, será impresso o valor 0.0.</p>
 
-<p>O que você achou?</p>
-
-<p>Abraços</p>
-
-<p>Breno</p>
+<p>O legal do <code>Option</code> é que através da definição do seu tipo, e de suas higher-order functions, torna-se difícil uma <code>NullReferenceException</code> ser lançada. Toda vez que alguma função possa retornar um valor nulo, basta retornar um valor do tipo <code>Option[T]</code>, ao invés de simplesmente um valor do tipo <code>T</code>. A partir daí, é só usar as funções <code>map</code> e <code>flatMap</code>, que elas se encarregam de tratar os casos onde o valor for nulo, propagando o <code>None</code> por toda a cadeia de chamadas.</p>
 </div>
   
   
