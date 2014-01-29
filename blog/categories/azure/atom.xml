@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: azure, | Breno Ferreira's Blog]]></title>
+  <link href="http://brenoferreira.github.io/blog/categories/azure/atom.xml" rel="self"/>
+  <link href="http://brenoferreira.github.io/"/>
+  <updated>2014-01-28T22:33:19-02:00</updated>
+  <id>http://brenoferreira.github.io/</id>
+  <author>
+    <name><![CDATA[Breno Ferreira]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Lição aprendida em cenário de alta escalabilidade]]></title>
+    <link href="http://brenoferreira.github.io/blog/2014/01/28/licao-aprendida-em-cenario-de-alta-escalabilidade/"/>
+    <updated>2014-01-28T22:21:00-02:00</updated>
+    <id>http://brenoferreira.github.io/blog/2014/01/28/licao-aprendida-em-cenario-de-alta-escalabilidade</id>
+    <content type="html"><![CDATA[<p>Atualmente na Lambda3, estou trabalhando em um projeto que demanda alta performance e escalabilidade, pois terá uma demanda na casa de alguns milhares de usuários simultâneos (em pior caso).</p>
+
+<p>A aplicação, hospedada no Windows Azure, é feita em ASP.NET MVC, que tem um suporte razoável para execução de requests de maneira assíncrona.</p>
+
+<p>``` csharp
+public async Task<ActionResult> Index(int id)
+{</p>
+
+<pre><code>var model = await &lt;async expression&gt;;
+
+return View(model);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Então, qualquer chamada que possa demorar, em todo o ciclo de vida do Request, é feito de maneira assíncrona. Chamadas a Banco de Dados (usamos o Azure Table Storage), requisições remotas, entre outras, são todas feitas utilizando o async/await pattern do C#.</p>
+
+<p>Por que isso foi feito? Para não bloquera threads do Thread Pool do IIS. Se toda vez que alguma operação de IO bloqueasse a execução do Request, a thread ficaria bloqueada até o término da operação. E como vamos ter milhares de usuários simultâneos, isso poderia levar à todas as threads disponíveis no Thread Pool do IIS estarem ocupadas, e a aplicação iria parar de responder. Se as operações são executadas de maneira assíncrona, as threads são liberadas assim que a operação inicia, e depois que ela termina, outra thread disponível no Thread Pool é usada para continuar a execução. Assim, nenhuma thread fica bloqueada por muito tempo. Essa é uma das maneiras mais simples (mas não é tão simples assim) de resolver o problema. Node.JS por exemplo, em toda sua API base, só usa operações assíncronas de IO.</p>
+
+<p>Quando conseguimos chegar em um estágio razoavelmente estável da aplicação, começamos a fazer testes de carga, rodamos alguns cenários: com algumas centenas de usuários simultâneos e poucas instâncias (umas 2 ou 3) executando a aplicação. Os resultado foram bons. Conseguimos responder 200 requests simultâneos tranquilamente, com um tempo de resposta razoável, na média de 1-2 segundos.</p>
+
+<p>Mas, quando subimos para 1000 usuários simultâneos e 10 instâncias, os resultados foram muito ruins. A aplicação começou a parar de responder, e tinhamos uma média de tempo de resposta de 10 segundos! Inaceitável.</p>
+
+<p>Por que? Tinhamos feito tudo bonito, async e await para todos os lados. O uso de CPU e de memória nas VMs estava baixo. O que estava acontecendo?</p>
+
+<p>Botamos o New Relic para monitorar a aplicação e o que vimos é que tinha um método do ASP.NET que estava demorando muito para responder. Vimos que um método estava demorando muito para responder: <code>System.Web.HttpApplication.BeginRequest</code>. Uma rápida pesquisa no Google nos levou a algumas possibilidades, e uma delas, era de que esse método estava bloqueando enquando o ASP.NET esperava threads serem liberadas para processar o request.</p>
+
+<p>Durante a caçada ao problema, percebi uma coisa estranha. Tinhamos um mecanismo de gravação de logs na aplicação. Como eram gerados uma quantidade razoável de logs, as vezes durante um único request, eles eram escritos de maneira assíncrona também. Dando uma olhada na implementação de um <a href="http://msdn.microsoft.com/en-us/library/system.diagnostics.tracelistener.aspx">TraceListener</a> customizado nosso, vi que no método Flush, esperavamos todas as operações de escrita no log terminarem:</p>
+
+<p>``` csharp
+public override void Flush()
+{</p>
+
+<pre><code>Task.WaitAll(escritasNoLog);
+base.Flush();
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Até aí tudo bem. Como os métodos de escrita de log seguiam o esquema &ldquo;fire-and-forget&rdquo;, o método <code>Flush</code> não fazia muita diferença. Só se em alguma parte do sistema fosse necessário esperar a escrita de operações de Log. O que foi surpresa para mim, é que na configuração de logs da aplicação, a propriedade <code>autoflush</code> estava ligada!</p>
+
+<p>``` xml
+&lt;system.diagnostics></p>
+
+<pre><code>...
+&lt;trace autoflush="true" indentsize="4" /&gt;
+</code></pre>
+
+<p>&lt;/system.diagnostics>
+```</p>
+
+<p>Ou seja, cada vez que era executado um <code>Trace.Write("...")</code> na aplicação, a execução bloqueava esperando a escrita do log terminar. Como isso ocorria com uma certa frequencia, basicamente em todos os requests a execução bloqueava por um determinado período de tempo. Desligada a opção <code>autoflush</code>, feito o deploy novamente, e após a execução dos mesmos testes de carga, o tempo de resposta ficou na média de 1-2 segundos e a aplicação estava respondendo 6 vezes mais requisições durante a execução inteira do teste de carga.</p>
+
+<p>Antes da mudança de configuração, tinhamos um tempo médio de resposta a cada requisição de 10 segundos, e durante o teste de carga (10 minutos), eram executados entre 15 e 20 mil cenários (todo um fluxo de teste com várias interações no sistema). Após desligar o <code>autoflush</code>, o tempo médio de resposta caiu para 1-2 segundos, e era executado, nos mesmos 10 minutos do teste, entre 80 e 90 mil cenarios. Todas as vezes usamos 10 instâncias de VMs do <a href="http://msdn.microsoft.com/en-us/library/windowsazure/dn197896.aspx">tamanho medium</a> do Windows Azure. Os agentes de execução dos testes de carga rodavam localmente em um servidor no nosso escritório em SP.</p>
+
+<h3>Conclusão</h3>
+
+<p>Vimos na prática que bloquear a execução de threads do web server por muito tempo, em um ambiente com uma enorme quantidade de usuários concorrentes vai ser um grande golpe na performance do sistema. É muito bom ver que o pessoal que desenvolve frameworks já está ligado nisso e que isso hoje já não é tão dificil de resolver. Já vi soluções muito boas em frameworks conhecidos nas plataformas .NET (ASP.NET MVC), Node (Express), Scala (Play+Akka, Finagle+Finatra). Esses são alguns que eu conheço. Não sei dizer como andam as coisas no mundo Rails e Django por exemplo.</p>
+
+<p>Claro que nosso cenário ainda não chega perto do problema do Twitter, Facebook, Amazon, etc.. Esses casos são bem mais complexos. Mas, no nosso cenário, bastando a execução assíncrona de IO, conseguimos escalar bem a aplicação para uma quantidade na casa dos milhares de usuários simultâneos.</p>
+]]></content>
+  </entry>
+  
+</feed>
