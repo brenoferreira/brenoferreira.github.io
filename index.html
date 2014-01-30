@@ -135,7 +135,7 @@
 
 <p>Por que? Tinhamos feito tudo bonito, async e await para todos os lados. O uso de CPU e de memória nas VMs estava baixo. O que estava acontecendo?</p>
 
-<p>Botamos o New Relic para monitorar a aplicação e o que vimos é que tinha um método do ASP.NET que estava demorando muito para responder. Vimos que um método estava demorando muito para responder: <code>System.Web.HttpApplication.BeginRequest</code>. Uma rápida pesquisa no Google nos levou a algumas possibilidades, e uma delas, era de que esse método estava bloqueando enquando o ASP.NET esperava threads serem liberadas para processar o request.</p>
+<p>Configuramos o <a href="http://newrelic.com/">New Relic</a> para monitorar a aplicação e o que vimos é que tinha um método do ASP.NET que estava demorando muito para responder: <code>System.Web.HttpApplication.BeginRequest</code>. Uma rápida pesquisa no Google nos levou a algumas possibilidades, e uma delas, era de que esse método estava bloqueando enquando o ASP.NET esperava threads serem liberadas para processar o request.</p>
 
 <p>Durante a caçada ao problema, percebi uma coisa estranha. Tinhamos um mecanismo de gravação de logs na aplicação. Como eram gerados uma quantidade razoável de logs, as vezes durante um único request, eles eram escritos de maneira assíncrona também. Dando uma olhada na implementação de um <a href="http://msdn.microsoft.com/en-us/library/system.diagnostics.tracelistener.aspx">TraceListener</a> customizado nosso, vi que no método Flush, esperavamos todas as operações de escrita no log terminarem:</p>
 
