@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Functional Programming | Breno Ferreira's Blog]]></title>
   <link href="http://brenoferreira.github.io/blog/categories/functional-programming/atom.xml" rel="self"/>
   <link href="http://brenoferreira.github.io/"/>
-  <updated>2014-01-29T22:20:33-02:00</updated>
+  <updated>2014-02-26T16:29:48-03:00</updated>
   <id>http://brenoferreira.github.io/</id>
   <author>
     <name><![CDATA[Breno Ferreira]]></name>
@@ -12,6 +12,138 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tratando Null Values - Parte 2]]></title>
+    <link href="http://brenoferreira.github.io/blog/2014/02/26/tratando-null-values-parte-2/"/>
+    <updated>2014-02-26T16:24:00-03:00</updated>
+    <id>http://brenoferreira.github.io/blog/2014/02/26/tratando-null-values-parte-2</id>
+    <content type="html"><![CDATA[<blockquote><p>Veja a parte 1 <a href="http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/">aqui</a></p></blockquote>
+
+<p>Está rolando uma thread no grupo .NET Architects sobre o Null Object Pattern. O assunto começou com uma dúvida sobre como criar mapeamentos do NHibernate com classes que possuem referencias a um Null Object.</p>
+
+<p>Foram dadas algumas respostas, mas a thread continuou com o assunto e dúvidas surgiram sobre: Null Object é Anti-Pattern? Como usar? Non-Nullable References é melhor?</p>
+
+<p>Vou dar algumas opiniões minhas aqui sobre esse assunto.</p>
+
+<h2>É Anti-Pattern?</h2>
+
+<p>Não acho que seja. Mas pode vir a ser. Patterns são coisas que não devem ser abusadas, e é uma linha bem fina sobre quando é necessário e quando não é.</p>
+
+<h3>Algumas reflexões</h3>
+
+<p>Em muitas estruturas de dados, é comum o uso de um &ldquo;Null Object&rdquo;. Por exemplo:</p>
+
+<h4>Listas</h4>
+
+<p>Existe um objeto que representa uma lista vazia. Geralmente é chamado de <code>Nil</code> ou <code>Empty</code>.</p>
+
+<h4>Árvores</h4>
+
+<p>Existe os nós das árvores. Cada um com seu tipo: <code>Node</code> geralmente é o tipo base, e daí existe os tipos <code>Leaf</code>, que representa o último nó de um branch da árvore, e é comum existir o que representa um nó vazio, também chamado de <code>Empty</code> ou <code>Nil</code>. Nós <code>Leaf</code> geralmente usam esse tipo para representar seus sub-nós (que não existem).</p>
+
+<p>Em ambos esses casos, seria melhor ou pior usar um valor <code>null</code> para representar uma lista vazia, ou os filhos de um nó da árvore que não existem? Minha opinião é: seria muito pior. Tornaria o design da API mais feio, e também deixaria o uso da API mais propenso a erros.</p>
+
+<h2>Non-Nullable References</h2>
+
+<p>A ideia é muito boa, mas na prática, não é tão simples assim de se implementar. Na thread postaram links para quatro posts falando sobre o assunto:</p>
+
+<p><a href="http://blogs.msdn.com/b/cyrusn/archive/2005/04/25/411617.aspx">Parte 1</a>
+<a href="http://blogs.msdn.com/b/cyrusn/archive/2005/04/25/411630.aspx">Parte 2</a>
+<a href="http://blogs.msdn.com/b/cyrusn/archive/2005/04/26/412040.aspx">Parte 3</a>
+<a href="http://blogs.msdn.com/b/cyrusn/archive/2005/04/27/412444.aspx">Parte 4</a></p>
+
+<p>O Eric Lippert (ex-membro do time do C#) também <a href="http://blog.coverity.com/2013/11/20/c-non-nullable-reference-types/">postou em seu blog</a> sobre o assunto:</p>
+
+<p>É uma pena, pois acho que nunca veremos isso no C#.</p>
+
+<p>Uma linguagem que tem suporte a esse recurso é <a href="http://confluence.jetbrains.com/display/Kotlin/Null-safety">Kotlin</a>. Kotlin é uma linguagem criada pela Jetbrains, que roda sobre a JVM. Essa é uma das poucas linguagens que eu já vi que se preocupou com isso desde o início.</p>
+
+<h2>Option type</h2>
+
+<p>Já <a href="http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/">postei aqui</a> sobre o assunto. E, como a thread é do .NET Architects, eu e o Abner (trabalha comigo na Lambda3) criamos um <a href="https://github.com/abnerdasdores/CSharp-OptionType">projeto no Github</a> com uma implementação do tipo Option em C#.</p>
+
+<p>Alguns exemplos:</p>
+
+<p>``` csharp
+var pessoa = new Pessoa
+{</p>
+
+<pre><code>Nome = "Robb Stark"
+</code></pre>
+
+<p>};</p>
+
+<p>var optionPessoa = Option.Create(pessoa);</p>
+
+<p>var logradouro = optionPessoa</p>
+
+<pre><code>                    .Map(p =&gt; p.Endereco)
+                    .Map(e =&gt; e.Cidade)
+                    .GetOrElse("Não informado");
+</code></pre>
+
+<p>logradouro.Should().Be(&ldquo;Não informado&rdquo;);
+```</p>
+
+<p>``` csharp
+var option = Option.From(1);</p>
+
+<p>option.Should().Be(Option.From(1));
+```</p>
+
+<p>``` csharp
+var option = Option.From<string>(null);</p>
+
+<p>option.Should().Be(Option.None<string>());
+```</p>
+
+<p>Inclusive com suporte (inicial) a Linq.</p>
+
+<p>``` csharp
+var pessoa = new Pessoa
+{</p>
+
+<pre><code>Nome = "Robb Stark"
+</code></pre>
+
+<p>};</p>
+
+<p>var res = (from p in Option.From(pessoa)</p>
+
+<pre><code>      from e in p.Endereco.ToOption()
+      select e.Cidade).GetOrElse("Sem endereco");
+</code></pre>
+
+<p>res.Should().Be(&ldquo;Sem endereco&rdquo;);
+```</p>
+
+<p>``` csharp
+var pessoa = new Pessoa
+{</p>
+
+<pre><code>Nome = "Robb Stark",
+Endereco = new Endereco
+{
+    Cidade = "Winterfell"
+}
+</code></pre>
+
+<p>};</p>
+
+<p>var res = from p in Option.From(pessoa)</p>
+
+<pre><code>      from e in p.Endereco.ToOption()
+      select e.Cidade;
+</code></pre>
+
+<p>res.Should().Be(Option.From(&ldquo;Winterfell&rdquo;));</p>
+
+<p>```</p>
+
+<p>O que acham? &ldquo;Linq-To-Option&rdquo; ficou legal?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tratando null values like a boss com o tipo Option]]></title>

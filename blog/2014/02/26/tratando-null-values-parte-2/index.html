@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Tratando Null Values - Parte 2 - Breno Ferreira's Blog</title>
+  <meta name="author" content="Breno Ferreira">
+
+  
+  <meta name="description" content="Veja a parte 1 aqui Está rolando uma thread no grupo .NET Architects sobre o Null Object Pattern. O assunto começou com uma dúvida sobre como criar &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://brenoferreira.github.io/blog/2014/02/26/tratando-null-values-parte-2">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Breno Ferreira's Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-46641091-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Breno Ferreira's Blog</a></h1>
+  
+    <h2>Da mente de um desenvolvedor para a internet</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:brenoferreira.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Tratando Null Values - Parte 2</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-26T16:24:00-03:00" pubdate data-updated="true">Feb 26<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><blockquote><p>Veja a parte 1 <a href="http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/">aqui</a></p></blockquote>
+
+<p>Está rolando uma thread no grupo .NET Architects sobre o Null Object Pattern. O assunto começou com uma dúvida sobre como criar mapeamentos do NHibernate com classes que possuem referencias a um Null Object.</p>
+
+<p>Foram dadas algumas respostas, mas a thread continuou com o assunto e dúvidas surgiram sobre: Null Object é Anti-Pattern? Como usar? Non-Nullable References é melhor?</p>
+
+<p>Vou dar algumas opiniões minhas aqui sobre esse assunto.</p>
+
+<h2>É Anti-Pattern?</h2>
+
+<p>Não acho que seja. Mas pode vir a ser. Patterns são coisas que não devem ser abusadas, e é uma linha bem fina sobre quando é necessário e quando não é.</p>
+
+<h3>Algumas reflexões</h3>
+
+<p>Em muitas estruturas de dados, é comum o uso de um &ldquo;Null Object&rdquo;. Por exemplo:</p>
+
+<h4>Listas</h4>
+
+<p>Existe um objeto que representa uma lista vazia. Geralmente é chamado de <code>Nil</code> ou <code>Empty</code>.</p>
+
+<h4>Árvores</h4>
+
+<p>Existe os nós das árvores. Cada um com seu tipo: <code>Node</code> geralmente é o tipo base, e daí existe os tipos <code>Leaf</code>, que representa o último nó de um branch da árvore, e é comum existir o que representa um nó vazio, também chamado de <code>Empty</code> ou <code>Nil</code>. Nós <code>Leaf</code> geralmente usam esse tipo para representar seus sub-nós (que não existem).</p>
+
+<p>Em ambos esses casos, seria melhor ou pior usar um valor <code>null</code> para representar uma lista vazia, ou os filhos de um nó da árvore que não existem? Minha opinião é: seria muito pior. Tornaria o design da API mais feio, e também deixaria o uso da API mais propenso a erros.</p>
+
+<h2>Non-Nullable References</h2>
+
+<p>A ideia é muito boa, mas na prática, não é tão simples assim de se implementar. Na thread postaram links para quatro posts falando sobre o assunto:</p>
+
+<p><a href="http://blogs.msdn.com/b/cyrusn/archive/2005/04/25/411617.aspx">Parte 1</a>
+<a href="http://blogs.msdn.com/b/cyrusn/archive/2005/04/25/411630.aspx">Parte 2</a>
+<a href="http://blogs.msdn.com/b/cyrusn/archive/2005/04/26/412040.aspx">Parte 3</a>
+<a href="http://blogs.msdn.com/b/cyrusn/archive/2005/04/27/412444.aspx">Parte 4</a></p>
+
+<p>O Eric Lippert (ex-membro do time do C#) também <a href="http://blog.coverity.com/2013/11/20/c-non-nullable-reference-types/">postou em seu blog</a> sobre o assunto:</p>
+
+<p>É uma pena, pois acho que nunca veremos isso no C#.</p>
+
+<p>Uma linguagem que tem suporte a esse recurso é <a href="http://confluence.jetbrains.com/display/Kotlin/Null-safety">Kotlin</a>. Kotlin é uma linguagem criada pela Jetbrains, que roda sobre a JVM. Essa é uma das poucas linguagens que eu já vi que se preocupou com isso desde o início.</p>
+
+<h2>Option type</h2>
+
+<p>Já <a href="http://brenoferreira.github.io/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/">postei aqui</a> sobre o assunto. E, como a thread é do .NET Architects, eu e o Abner (trabalha comigo na Lambda3) criamos um <a href="https://github.com/abnerdasdores/CSharp-OptionType">projeto no Github</a> com uma implementação do tipo Option em C#.</p>
+
+<p>Alguns exemplos:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">pessoa</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Pessoa</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Nome</span> <span class="p">=</span> <span class="s">&quot;Robb Stark&quot;</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">optionPessoa</span> <span class="p">=</span> <span class="n">Option</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="n">pessoa</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">logradouro</span> <span class="p">=</span> <span class="n">optionPessoa</span>
+</span><span class='line'>                        <span class="p">.</span><span class="n">Map</span><span class="p">(</span><span class="n">p</span> <span class="p">=&gt;</span> <span class="n">p</span><span class="p">.</span><span class="n">Endereco</span><span class="p">)</span>
+</span><span class='line'>                        <span class="p">.</span><span class="n">Map</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">Cidade</span><span class="p">)</span>
+</span><span class='line'>                        <span class="p">.</span><span class="n">GetOrElse</span><span class="p">(</span><span class="s">&quot;Não informado&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">logradouro</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="s">&quot;Não informado&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">option</span> <span class="p">=</span> <span class="n">Option</span><span class="p">.</span><span class="n">From</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">option</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="n">Option</span><span class="p">.</span><span class="n">From</span><span class="p">(</span><span class="m">1</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">option</span> <span class="p">=</span> <span class="n">Option</span><span class="p">.</span><span class="n">From</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;(</span><span class="k">null</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">option</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="n">Option</span><span class="p">.</span><span class="n">None</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;());</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Inclusive com suporte (inicial) a Linq.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">pessoa</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Pessoa</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Nome</span> <span class="p">=</span> <span class="s">&quot;Robb Stark&quot;</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">res</span> <span class="p">=</span> <span class="p">(</span><span class="k">from</span> <span class="n">p</span> <span class="k">in</span> <span class="n">Option</span><span class="p">.</span><span class="n">From</span><span class="p">(</span><span class="n">pessoa</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">from</span> <span class="n">e</span> <span class="k">in</span> <span class="n">p</span><span class="p">.</span><span class="n">Endereco</span><span class="p">.</span><span class="n">ToOption</span><span class="p">()</span>
+</span><span class='line'>          <span class="k">select</span> <span class="n">e</span><span class="p">.</span><span class="n">Cidade</span><span class="p">).</span><span class="n">GetOrElse</span><span class="p">(</span><span class="s">&quot;Sem endereco&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">res</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="s">&quot;Sem endereco&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">pessoa</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Pessoa</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Nome</span> <span class="p">=</span> <span class="s">&quot;Robb Stark&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Endereco</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Endereco</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">Cidade</span> <span class="p">=</span> <span class="s">&quot;Winterfell&quot;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">res</span> <span class="p">=</span> <span class="k">from</span> <span class="n">p</span> <span class="k">in</span> <span class="n">Option</span><span class="p">.</span><span class="n">From</span><span class="p">(</span><span class="n">pessoa</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">from</span> <span class="n">e</span> <span class="k">in</span> <span class="n">p</span><span class="p">.</span><span class="n">Endereco</span><span class="p">.</span><span class="n">ToOption</span><span class="p">()</span>
+</span><span class='line'>          <span class="k">select</span> <span class="n">e</span><span class="p">.</span><span class="n">Cidade</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">res</span><span class="p">.</span><span class="n">Should</span><span class="p">().</span><span class="n">Be</span><span class="p">(</span><span class="n">Option</span><span class="p">.</span><span class="n">From</span><span class="p">(</span><span class="s">&quot;Winterfell&quot;</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>O que acham? &ldquo;Linq-To-Option&rdquo; ficou legal?</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Breno Ferreira</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-26T16:24:00-03:00" pubdate data-updated="true">Feb 26<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/c-number/'>C#</a>, <a class='category' href='/blog/categories/functional-programming/'>Functional Programming</a>, <a class='category' href='/blog/categories/monads/'>Monads</a>, <a class='category' href='/blog/categories/option/'>Option</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://brenoferreira.github.io/blog/2014/02/26/tratando-null-values-parte-2/" data-via="" data-counturl="http://brenoferreira.github.io/blog/2014/02/26/tratando-null-values-parte-2/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/01/28/licao-aprendida-em-cenario-de-alta-escalabilidade/" title="Previous Post: Lição aprendida em cenário de alta escalabilidade">&laquo; Lição aprendida em cenário de alta escalabilidade</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+
+  <section>
+    <h1>Comments</h1>
+    <div id="facebook_comments" aria-live="polite">
+      <noscript>Please enable JavaScript to view the comments powered by facebook</a></noscript>
+<div
+  class="fb-comments"
+  data-href="http://brenoferreira.github.io/blog/2014/02/26/tratando-null-values-parte-2/"
+  data-width="470"></div>
+    </div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/02/26/tratando-null-values-parte-2/">Tratando Null Values - Parte 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/28/licao-aprendida-em-cenario-de-alta-escalabilidade/">Lição Aprendida Em Cenário De Alta Escalabilidade</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/23/tratando-null-values-like-a-boss-com-o-tipo-option/">Tratando Null Values Like a Boss Com O Tipo Option</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/20/meu-primeiro-post-um-meta-post/">Meu Primeiro Post - Um Meta-post</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Breno Ferreira -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+js.src = "//connect.facebook.net/en_US/all.js#appId=268611913287117&xfbml=1";
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
