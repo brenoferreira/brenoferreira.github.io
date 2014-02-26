@@ -29,7 +29,7 @@ Mas, quando subimos para 1000 usuários simultâneos e 10 instâncias, os result
 
 Por que? Tinhamos feito tudo bonito, async e await para todos os lados. O uso de CPU e de memória nas VMs estava baixo. O que estava acontecendo?
 
-Configuramos o New Relic para monitorar a aplicação e o que vimos é que tinha um método do ASP.NET que estava demorando muito para responder: `System.Web.HttpApplication.BeginRequest`. Uma rápida pesquisa no Google nos levou a algumas possibilidades, e uma delas, era de que esse método estava bloqueando enquando o ASP.NET esperava threads serem liberadas para processar o request.
+Configuramos o [New Relic](http://newrelic.com/) para monitorar a aplicação e o que vimos é que tinha um método do ASP.NET que estava demorando muito para responder: `System.Web.HttpApplication.BeginRequest`. Uma rápida pesquisa no Google nos levou a algumas possibilidades, e uma delas, era de que esse método estava bloqueando enquando o ASP.NET esperava threads serem liberadas para processar o request.
 
 Durante a caçada ao problema, percebi uma coisa estranha. Tinhamos um mecanismo de gravação de logs na aplicação. Como eram gerados uma quantidade razoável de logs, as vezes durante um único request, eles eram escritos de maneira assíncrona também. Dando uma olhada na implementação de um [TraceListener](http://msdn.microsoft.com/en-us/library/system.diagnostics.tracelistener.aspx) customizado nosso, vi que no método Flush, esperavamos todas as operações de escrita no log terminarem:
 
